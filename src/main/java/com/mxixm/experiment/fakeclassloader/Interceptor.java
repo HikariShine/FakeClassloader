@@ -15,6 +15,7 @@ public class Interceptor {
         long start = System.currentTimeMillis();
         try {
             method.setAccessible(true);
+            System.out.println(c.call());
             return null;
         } finally {
             System.out.println(method + " took " + (System.currentTimeMillis() - start));
