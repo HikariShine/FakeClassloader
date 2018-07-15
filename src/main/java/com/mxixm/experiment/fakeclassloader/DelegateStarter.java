@@ -18,27 +18,25 @@ import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static net.bytebuddy.matcher.ElementMatchers.named;
-
 public class DelegateStarter {
 
     /**
      * 使用入口代理，用自定义的类加载器加载真实入口类，同时替换线程的上下文类加载器，那么理论上只要不显式声明
      * 使用特定的类加载器，后续的所有类加载都会使用我们自己定义的代理类加载器
      *
-     * @param args
      * @throws ClassNotFoundException
      * @throws NoSuchMethodException
      * @throws InvocationTargetException
      * @throws IllegalAccessException
      */
-    public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public static void run(Class<?> clazz) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         final String var1 = System.getProperty("java.class.path");
-        ClassLoader cl = new DelegateClassLoader(pathToURLs(getClassPath(var1)));
-        Thread.currentThread().setContextClassLoader(cl);
-        Class c = cl.loadClass("com.mxixm.experiment.fakeclassloader.Starter");
-        Method m = c.getMethod("main", String[].class);
-        m.invoke(null, new Object[]{new String[]{}});
+        ClassLoader newClassLoader = new DelegateClassLoader(pathToURLs(getClassPath(var1)));
+        Thread.currentThread().setContextClassLoader(newClassLoader);
+        Class newSourceClass = newClassLoader.loadClass(clazz.getName());
+        Class springApplicationClass = newClassLoader.loadClass("org.springframework.boot.SpringApplication.SpringApplication");
+        Method springBootRunMethod = springApplicationClass.getMethod("run", Object.class, String[].class);
+        springBootRunMethod.invoke(null, new Object[]{newSourceClass, new String[]{}});
     }
 
     public static class DelegateClassLoader extends URLClassLoader {
